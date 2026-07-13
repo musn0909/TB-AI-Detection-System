@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Prediction History</title>
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}">
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/history.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="top-bar">
+
+<h1>
+🫁 Prediction History Dashboard
+</h1>
+
+<a href="/"
+class="home-btn">
+
+🏠 Home
+
+</a>
+
+</div>
+
+<div class="dashboard">
+
+<div class="card">
+
+<h4>👥 Total Patients</h4>
+
+<h2>{{ stats.total }}</h2>
+
+</div>
+
+<div class="card">
+
+<h4>🫁 TB Positive</h4>
+
+<h2 style="color:#dc2626;">
+
+{{ stats.tb }}
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<h4>✅ Normal</h4>
+
+<h2 style="color:#16a34a;">
+
+{{ stats.normal }}
+
+</h2>
+
+</div>
+
+<div class="card">
+
+<h4>📄 Total Reports</h4>
+
+<h2>{{ stats.total }}</h2>
+
+</div>
+
+</div>
+
+<h3 style="margin-bottom:10px;color:#444;">
+
+Search Patient Records
+
+</h3>
+
+<form
+action="/history"
+method="GET"
+class="search-form">
+
+<input
+
+type="text"
+
+name="search"
+
+placeholder="Search patient by name..."
+
+value="{{ keyword }}">
+
+<button type="submit">
+
+🔍 Search
+
+</button>
+
+</form>
+
+{% if history %}
+
+<table class="history-table">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+
+<th>Patient</th>
+
+<th>Age</th>
+
+<th>Gender</th>
+
+<th>Model</th>
+
+<th>Prediction</th>
+
+<th>Confidence</th>
+
+<th>Original X-ray</th>
+
+<th>Grad-CAM</th>
+
+<th>Date</th>
+
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for row in history %}
+
+<tr>
+
+<td>
+
+{{ row.id }}
+
+</td>
+
+<td>
+
+<a href="#"
+
+style="
+
+text-decoration:none;
+
+color:#2563eb;
+
+font-weight:bold;">
+
+{{ row.patient_name }}
+
+</a>
+
+</td>
+
+<td>
+
+{{ row.age }}
+
+</td>
+
+<td>
+
+{{ row.gender }}
+
+</td>
+
+<td>
+
+{{ row.model }}
+
+</td>
+
+<td>
+
+{% if row.prediction=="Tuberculosis" %}
+
+<span class="tb">
+
+{{ row.prediction }}
+
+</span>
+
+{% else %}
+
+<span class="normal">
+
+{{ row.prediction }}
+
+</span>
+
+{% endif %}
+
+</td>
+
+<td>
+
+{{ "%.2f"|format(row.confidence) }}%
+
+</td>
+
+<td>
+
+{% if row.image_path %}
+
+<img
+
+src="{{ row.image_path }}"
+
+class="thumb"
+
+onclick="openImage(this.src)">
+
+{% else %}
+
+-
+
+{% endif %}
+
+</td>
+<td>
+
+{% if row.gradcam_path %}
+
+<img
+
+src="{{ row.gradcam_path }}"
+
+class="thumb"
+
+onclick="openImage(this.src)"
+
+alt="Grad-CAM">
+
+{% else %}
+
+-
+
+{% endif %}
+
+</td>
+
+<td>
+
+{{ row.created_at }}
+
+</td>
+
+<td>
+
+<div class="action-buttons">
+
+<a
+
+href="{{ row.pdf_path }}"
+
+target="_blank"
+
+class="pdf-btn">
+
+📄 PDF
+
+</a>
+
+<a
+
+href="/delete/{{ row.id }}"
+
+class="delete-btn"
+
+onclick="return confirm('Are you sure you want to delete this record?')">
+
+🗑 Delete
+
+</a>
+
+</div>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+{% else %}
+
+<div class="card">
+
+<div class="no-record">
+
+<h2>No Prediction History Found</h2>
+
+<p>
+
+Start by analyzing a chest X-ray to create your first patient record.
+
+</p>
+
+</div>
+
+</div>
+
+{% endif %}
+
+</div>
+
+<!-- ===========================
+     IMAGE PREVIEW MODAL
+============================ -->
+
+<div id="imageModal">
+
+<span onclick="closeImage()">
+
+&times;
+
+</span>
+
+<img id="modalImage">
+
+</div>
+
+<script>
+
+function openImage(src){
+
+    document.getElementById("imageModal").style.display = "block";
+
+    document.getElementById("modalImage").src = src;
+
+}
+
+function closeImage(){
+
+    document.getElementById("imageModal").style.display = "none";
+
+}
+
+window.onclick = function(event){
+
+    let modal = document.getElementById("imageModal");
+
+    if(event.target === modal){
+
+        closeImage();
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>

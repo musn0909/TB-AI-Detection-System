@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>TB-AI Detection System</title>
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div id="loadingScreen">
+
+    <div class="loading-card">
+
+        <div class="spinner"></div>
+
+        <h2>AI Analysis in Progress</h2>
+
+        <p id="loadingText">
+
+            Uploading Chest X-ray...
+
+        </p>
+
+    </div>
+
+</div>
+
+
+</div>
+
+<div class="container">
+
+<div class="header">
+
+    <h1>🫁 TB-AI Detection System</h1>
+
+    <p>
+        Automated Pulmonary Tuberculosis Detection
+        Using Deep Learning
+    </p>
+
+   <div class="badge">
+    Proposed Model: TBNet ⭐
+</div>
+
+<div style="margin-top:20px;">
+
+    <a href="/history">
+
+        <button
+            type="button"
+            style="
+                width:220px;
+                background:#16a34a;
+            ">
+
+            📋 View Prediction History
+
+        </button>
+
+    </a>
+
+</div>
+</div>
+
+<div class="card">
+{% if error %}
+
+<div class="error-box">
+
+    ❌ {{ error }}
+
+</div>
+
+{% endif %}
+    <form action="/predict"
+          method="POST"
+          enctype="multipart/form-data"
+          onsubmit="showLoading()">
+        
+        <h2 style="margin-bottom:15px;">
+    Patient Information
+</h2>
+
+<label>Patient Name</label>
+
+<input
+    type="text"
+    name="patient_name"
+    placeholder="Enter patient name"
+    required>
+
+<label>Age</label>
+
+<input
+    type="number"
+    name="age"
+    min="1"
+    max="120"
+    placeholder="Enter age"
+    required>
+
+<label>Gender</label>
+
+<select
+    name="gender"
+    required>
+
+    <option value="">Select Gender</option>
+
+    <option value="Male">
+        Male
+    </option>
+
+    <option value="Female">
+        Female
+    </option>
+
+    <option value="Other">
+        Other
+    </option>
+
+</select>
+
+<hr style="margin:25px 0;">
+
+        <label>Select Model</label>
+
+        <select name="model">
+
+            <option value="tbnet">TBNet ⭐ Recommended</option>
+            <option value="resnet50">ResNet50-V2</option>
+            <option value="efficientnetb4">EfficientNetB4</option>
+            <option value="densenet121">DenseNet121</option>
+            <option value="custom_cnn">Custom CNN</option>
+
+        </select>
+
+        <label>Upload Chest X-ray</label>
+
+        <input type="file"
+               name="image"
+               id="imageInput"
+               accept=".jpg,.jpeg,.png"
+               onchange="previewImage(event)"
+               required>
+
+        <div id="previewContainer"
+             style="display:none; margin-top:20px;">
+
+            <h3>Preview</h3>
+
+            <img id="previewImage"
+                 style="max-width:300px;
+                        border-radius:10px;">
+
+        </div>
+
+        <button type="submit">
+            Analyze X-ray
+        </button>
+
+    </form>
+
+</div>
+
+{% if prediction %}
+
+<div class="result-card">
+
+    <h2>Prediction Result</h2>
+
+    <div class="stats-grid">
+    <div class="stat-box">
+
+    <h4>Patient</h4>
+
+    <p>{{ patient_name }}</p>
+
+</div>
+
+<div class="stat-box">
+
+    <h4>Age</h4>
+
+    <p>{{ age }}</p>
+
+</div>
+
+<div class="stat-box">
+
+    <h4>Gender</h4>
+
+    <p>{{ gender }}</p>
+
+</div>
+        <div class="stat-box">
+
+            <h4>Prediction</h4>
+
+            {% if prediction == "Tuberculosis" %}
+                <p class="tb-result">{{ prediction }}</p>
+            {% else %}
+                <p class="normal-result">{{ prediction }}</p>
+            {% endif %}
+
+        </div>
+
+        <div class="stat-box">
+
+            <h4>Confidence</h4>
+
+            <p>{{ confidence }}%</p>
+
+        </div>
+
+        <div class="stat-box">
+
+            <h4>Model Used</h4>
+
+            <p>{{ selected_model }}</p>
+
+        </div>
+
+        <div class="stat-box">
+
+            <h4>Status</h4>
+
+            {% if prediction == "Tuberculosis" %}
+                <p class="tb-result">Positive</p>
+            {% else %}
+                <p class="normal-result">Negative</p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <div class="confidence-section">
+
+        <h4>Confidence Score</h4>
+
+        <div class="progress-bar">
+
+            <div class="progress-fill"
+                 style="width: {{ confidence }}%;">
+
+            </div>
+
+        </div>
+
+        <span>{{ confidence }}%</span>
+
+    </div>
+
+</div>
+
+<div class="images">
+
+    <div>
+
+        <h3>Original Chest X-ray</h3>
+
+        <img src="{{ uploaded_image }}"
+             onclick="openModal(this.src)"
+             alt="Original X-ray">
+
+    </div>
+
+    <div>
+
+        <h3>Grad-CAM Heatmap</h3>
+
+        {% if gradcam_image %}
+
+            <img src="{{ gradcam_image }}"
+                 onclick="openModal(this.src)"
+                 alt="Grad-CAM">
+
+        {% else %}
+
+            <div class="gradcam-unavailable">
+
+                <h3>Grad-CAM Not Available</h3>
+
+                <p>{{ gradcam_message }}</p>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% if pdf_report %}
+
+<div class="download-section">
+
+    <a href="{{ pdf_report }}"
+       target="_blank">
+
+        <button type="button"
+                class="pdf-btn">
+
+            📄 Download PDF Report
+
+        </button>
+
+    </a>
+
+</div>
+
+{% endif %}
+
+{% endif %}
+
+<div class="footer">
+
+    <h3>
+        Department of Computer Science
+    </h3>
+
+    <p>
+        Final Year Project
+    </p>
+
+    <p>
+        Automated Detection of Pulmonary Tuberculosis
+        from Chest X-rays Using Deep Learning
+    </p>
+
+    <p>
+        Developed By: Umar Shamas & Muhammad Bilal
+    </p>
+
+    <p>
+        TB-AI Detection System © 2026
+    </p>
+
+</div>
+
+<!-- IMAGE MODAL -->
+
+<div id="imageModal"
+     style="display:none;
+            position:fixed;
+            z-index:9999;
+            left:0;
+            top:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.9);">
+<span onclick="closeModal()"
+      style="position:absolute;
+             top:20px;
+             right:40px;
+             color:white;
+             font-size:40px;
+             cursor:pointer;">
+
+    &times;
+
+</span>
+
+<img id="modalImage"
+     style="display:block;
+            margin:auto;
+            max-width:90%;
+            max-height:90%;
+            margin-top:30px;">
+
+</div>
+
+<script>
+
+function previewImage(event){
+
+    const preview =
+        document.getElementById(
+            "previewImage"
+        );
+
+    preview.src =
+        URL.createObjectURL(
+            event.target.files[0]
+        );
+
+    document.getElementById(
+        "previewContainer"
+    ).style.display = "block";
+}
+
+function showLoading(){
+
+    const loading = document.getElementById("loadingScreen");
+
+    loading.style.display = "flex";
+
+    const text = document.getElementById("loadingText");
+
+    const steps = [
+
+        "📤 Uploading Chest X-ray...",
+
+        "🧠 Loading AI Model...",
+
+        "🔍 Processing Image...",
+
+        "🤖 Generating Prediction...",
+
+        "🔥 Creating Grad-CAM...",
+
+        "📄 Generating PDF Report...",
+
+        "💾 Saving Patient History..."
+
+    ];
+
+    let i = 0;
+
+    text.innerHTML = steps[0];
+
+    const interval = setInterval(function(){
+
+        i++;
+
+        if(i < steps.length){
+
+            text.innerHTML = steps[i];
+
+        }else{
+
+            clearInterval(interval);
+
+        }
+
+    },700);
+
+}
+
+function openModal(src){
+
+    document.getElementById(
+        "imageModal"
+    ).style.display = "block";
+
+    document.getElementById(
+        "modalImage"
+    ).src = src;
+}
+
+function closeModal(){
+
+    document.getElementById(
+        "imageModal"
+    ).style.display = "none";
+}
+
+</script>
+
+</body>
+
+</html>

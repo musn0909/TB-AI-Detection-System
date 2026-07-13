@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+venv/
+.env
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Generated Files
+static/uploads/*
+static/gradcam/*
+static/reports/*
+
+# SQLite Database
+history.db
+
+# Logs
+*.log
